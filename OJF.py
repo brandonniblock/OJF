@@ -10,6 +10,21 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.message import EmailMessage
 import sys
+#used to automate finding each website
+#and determining if there are any jobs open
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from bs4 import BeautifulSoup
+import pathlib
+import os
+
+def replaceBackslash(string):
+    return str(string.as_posix())
+
+def getCurrentPath():
+    dir_path = pathlib.PureWindowsPath(os.path.dirname(os.path.realpath(__file__)))
+    return dir_path
 
 class OJF:
     def __init__(self):
@@ -38,7 +53,7 @@ class OJF:
         except SMTPAuthenticationError:
             print('SMTPAuthenticationError')
         text = email.as_string()
-        session.send_message(email)
+        #session.send_message(email)
         session.quit()
         print('Mail Sent')
     def createFile(self):
@@ -57,3 +72,19 @@ class OJF:
             company_list.append(x.rstrip())
         f.close()        
         return company_list
+    def findIfJobsAreOpen(self, company_list):
+        options = Options()
+        options.headless = False
+        options.add_argument('log-level=3')
+        options.add_argument('--disable-infobars')
+        options.add_argument('--start-maximized')
+        CHROMEDRIVER_PATH = str(replaceBackslash(getCurrentPath()))+'/Driver/chromedriver'
+        driver = webdriver.Chrome(CHROMEDRIVER_PATH ,options=options)
+        driver.get("https://www.google.com/")
+        for company in company_list:
+            search = driver.find_element_by_name('q')
+            search.send_keys(company)
+            search.send_keys(Keys.ENTER)
+            driver.execute_script("window.history.go(-1)")
+            #r = requests.get("<add your URL here>")
+            #soup = BeautifulSoup(r.content)
